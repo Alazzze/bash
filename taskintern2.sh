@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Функція для виведення допомоги
+# Help
 show_help() {
     echo "Usage: $0 --root-password <password> [--user <username>] [--user-password <password>] [--ip <ip_address>] [--sql-dump <dump_file>] [--help]"
     echo ""
@@ -13,7 +13,7 @@ show_help() {
     echo "  --help                         Display this help message"
 }
 
-# Перевірка чи є аргументи
+# Checking for arguments
 if [[ $# -eq 0 ]]; then
     show_help
     exit 1
@@ -25,7 +25,7 @@ USER_PASSWORD=""
 IP=""
 SQL_DUMP=""
 
-# Обробка переданих аргументів
+# Argument processing
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
@@ -66,23 +66,23 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Перевірка обов'язкових аргументів
+# Validation of mandatory arguments
 if [[ -z "$ROOT_PASSWORD" ]]; then
     echo "Root password is required."
     show_help
     exit 1
 fi
 
-# Встановлення MariaDB та інших залежностей
+# Install MariaDB
 echo "Installing MariaDB Server..."
 apt update
 apt install -y mariadb-server
 
-# Встановлення root пароля
+# root pass
 echo "Setting root password for MariaDB..."
 mysql -u root -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$ROOT_PASSWORD'); FLUSH PRIVILEGES;"
 
-# Створення користувача та встановлення йому пароля
+# Creating a user and setting a password
 if [[ -z "$USER_PASSWORD" ]]; then
     USER_PASSWORD=$(openssl rand -base64 12)
     echo "Auto-generated password for user $USERNAME: $USER_PASSWORD"
@@ -95,13 +95,13 @@ if [[ ! -z "$IP" ]]; then
     mysql -u root -p"$ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON *.* TO '$USERNAME'@'$IP' IDENTIFIED BY '$USER_PASSWORD' WITH GRANT OPTION;"
 fi
 
-# Ініціалізація БД з SQL дампу
+# DB initialization from SQL dump
 if [[ ! -z "$SQL_DUMP" ]]; then
     echo "Initializing MariaDB database from SQL dump..."
     mysql -u root -p"$ROOT_PASSWORD" < "$SQL_DUMP"
 fi
 
-# Налаштування PHPMyAdmin для роботи з MariaDB
+# Configuring PHPMyAdmin to work with MariaDB
 echo "Configuring PHPMyAdmin to work with MariaDB..."
 echo "phpmyadmin phpmyadmin/dbconfig-install boolean true" | debconf-set-selections
 echo "phpmyadmin phpmyadmin/app-password-confirm password $ROOT_PASSWORD" | debconf-set-selections
@@ -112,7 +112,7 @@ apt install -y phpmyadmin
 
 echo "Initialization completed successfully."
 
-# Виведення інформації
+# Output of information
 echo "MariaDB root password: $ROOT_PASSWORD"
 echo "MariaDB username: $USERNAME"
 echo "MariaDB user password: $USER_PASSWORD"
